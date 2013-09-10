@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+# WARNING -> THIS FILE IS MAINTAINED BY puppetmaster01.ops/git
+# Located in ~/gitwork/puppet/modules/java/templates/scripts/
+# puppetdoc ~/gitwork/puppet/modules/java/manifests/{jre,jdk}/install.pp
+
+# Installer script to download/extract jre/jdk using source binaries from oracle
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+DISTRO="<%= scope.lookupvar('java::distro') %>"
+install_log=<%= scope.lookupvar('java::install_log') %>
+
+# JAVA
+function check_java () {
+test -f /usr/bin/java
+if [ $? -eq 0 ]; then
+  echo "[JDK_ERR] java binary found, upgrade not supported."
+  exit 0
+fi
+}
+
+# $DISTRO
+DISTRO_src="`echo "<%= scope.lookupvar('java::src_url') %>"`"
+DISTRO_dst="`echo "<%= scope.lookupvar('java::dst_dir') %>"`"
+DISTRO_tar="`echo "$DISTRO_src" |  cut -d/ -f8`"
+
+function install_<%= scope.lookupvar('java::distro') %> () {
+echo "[ $DISTRO ] installation initiated."
+echo "[ $DISTRO ] logging to $install_log"
+
+wget --no-check-certificate --no-cookies --header "Cookie: s_nr=1366323682794; \
+s_cc=true; gpw_e24=http%3A%2F%2Fwww.oracle.com%2Ftechnetwork%2Fjava%2Fjavase%2Fdownloads%2Fjdk7-downloads-1880260.html; \
+s_sq=%5B%5BB%5D%5D" $DISTRO_src -O /root/$DISTRO_tar -a $install_log &&
+
+test -f /root/$DISTRO_tar
+if [ $? -eq 0 ]; then
+  cd /root
+  tar tzf $DISTRO_tar && tar xvzf $DISTRO_tar -C $DISTRO_dst &&
+  if [ $? -gt 0 ]; then
+    echo "[ $DISTRO error ] extraction (/root/$DISTRO_tar) failed! Unable to kontinue..."
+    echo "[ $DISTRO error ] extraction (/root/$DISTRO_tar) failed! Unable to kontinue..." >> $install_log
+    exit 1;
+  else
+    DISTRO_dir=`tar tvzf $DISTRO_tar | head -1 | cut -d/ -f2 | awk {'print $5'}`
+    echo "[ $DISTRO ] symlinking to /usr/bin/java"
+    ln -s $DISTRO_dst/$DISTRO_dir/bin/java /usr/bin
+    if [ $? -gt 0 ]; then      
+      echo "[ $DISTRO fail ] symlink: `ln -s $DISTRO_dst/$DISTRO_dir/bin/java /usr/bin`"
+      echo "[ $DISTRO fail ] symlink: `ln -s $DISTRO_dst/$DISTRO_dir/bin/java /usr/bin`" >> $install_log
+    else
+      $DISTRO_ver=`/usr/bin/java -version 2>&1 | head -1`
+      echo "[ $DISTRO success ] $DISTRO_ver installation completed on `date`"
+      echo "[ $DISTRO success ] $DISTRO_ver installation completed on `date`" >> $install_log
+    fi
+  fi
+fi
+}
+
+function check_install_<%= scope.lookupvar('java::distro') %> () {
+check_java
+test -f $install_log && grep success $install_log
+if [ $? -gt 0 ]; then  
+  test -f /root/$DISTRO_tar
+  if [ $? -eq 0 ]; then
+    DISTRO_dir=`tar tvzf /root/$DISTRO_tar | head -1 | cut -d/ -f2 | awk {'print $5'}`
+    if [ -z "$DISTRO_dir" ]; then 
+      install_<%= scope.lookupvar('java::distro') %>
+    else      
+      test -d $DISTRO_dst/$DISTRO_dir
+      if [ $? -eq 0 ]; then
+        echo "[ $DISTRO notice ] JAVA $DISTRO installer detected $DISTRO_dst/$DISTRO_dir on `date`"
+        echo "`cat $install_log`, no installation required.";
+        exit 0;
+      else
+        install_<%= scope.lookupvar('java::distro') %>
+      fi
+    fi
+  else
+    install_<%= scope.lookupvar('java::distro') %>   
+  fi
+fi
+}
+
+# MAIN
+check_install_<%= scope.lookupvar('java::distro') %>
