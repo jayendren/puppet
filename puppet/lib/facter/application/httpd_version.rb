@@ -1,4 +1,4 @@
-# Fact: postgres_version
+# Fact: httpd_version
 # Purpose: determine the apache server version
 #
 # Resolution:
