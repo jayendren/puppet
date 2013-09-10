@@ -1,5 +1,5 @@
 puppet
 ======
 
-puppet classes/modules
+puppet classes/modules/facts
 =======
