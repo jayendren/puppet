@@ -34,7 +34,7 @@
 #
 # === Authors
 #
-#   - Jayendren Maduray <jay.maduray@mtnbusiness.co.za>
+#   - Jayendren Maduray <jayendren@gmail.com>
 #
 #
 class java(
