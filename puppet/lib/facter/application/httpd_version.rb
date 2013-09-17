@@ -11,16 +11,11 @@
 Facter.add(:httpd_version) do
 confine :operatingsystem => :FreeBSD
   setcode do
-    t_apache = `which httpd`
-    if t_apache.empty?
+    test = Facter::Util::Resolution.exec("httpd -v | grep version")
+    if test.nil?
       httpd_version = "NOT_INSTALLED"
     else    
-      a_version = `httpd -v | grep version`.split(/:|\/|\(/)[2].strip
-      if a_version.nil?
-        httpd_version = "NOT_INSTALLED"
-      else
-        httpd_version = a_version
-      end
+      httpd_version = test.split(/:|\/|\(/)[2].strip
     end
   end
 end
@@ -28,16 +23,33 @@ end
 Facter.add(:httpd_version) do
 confine :operatingsystem => %w{RedHat Centos Ubuntu}
   setcode do
-    t_apache = `which apachectl`
-    if t_apache.empty?
+    test = Facter::Util::Resolution.exec("apachectl -v | grep version")
+    if test.nil?
       httpd_version = "NOT_INSTALLED"
     else    
-      a_version = `apachectl -v | grep version`.split(/:|\/|\(/)[2].strip
-      if a_version.nil?
+      httpd_version = test.split(/:|\/|\(/)[2].strip
+    end
+  end
+end
+
+Facter.add(:httpd_version) do #broadworks and solaris servers
+  if Facter.server_class.to_s.match(/Solaris_Broadworks_VOIP_Server/)
+    setcode do
+      test = Facter::Util::Resolution.exec("/usr/local/apache/apache_base/bin/apachectl -v | grep version")
+      if test.nil?
         httpd_version = "NOT_INSTALLED"
       else
-        httpd_version = a_version
+        httpd_version = test.split(/:|\/|\(/)[2].strip
       end
     end
+  elsif Facter.operatingsystem.to_s.match(/Solaris/)
+    setcode do
+      test = Facter::Util::Resolution.exec("/usr/apache2/bin/apachectl -v | grep version")
+      if test.nil?
+        httpd_version = "NOT_INSTALLED"
+      else
+        httpd_version = test.split(/:|\/|\(/)[2].strip
+      end
+    end    
   end
 end

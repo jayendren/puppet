@@ -1,4 +1,4 @@
-# Fact: postgres_version
+# Fact: svn_version
 # Purpose: determine the version of devel/subversion version
 #
 # Resolution:
